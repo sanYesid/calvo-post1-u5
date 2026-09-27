@@ -58,21 +58,21 @@ La alternativa descartada era duplicar las validaciones dentro de ReservaWebCont
 
 La inyección puede verificarse directamente en el constructor de cada controlador:
 
-// ReservaController.java
-public ReservaController(ReservaService service) { this.service = service; }
+// ReservaController.java       
+public ReservaController(ReservaService service) { this.service = service; }     
 
-// ReservaWebController.java 
-public ReservaWebController(ReservaService service, LaboratorioRepository laboratorioRepo) {
-    this.service = service;
-    this.laboratorioRepo = laboratorioRepo;
-}
+// ReservaWebController.java         
+public ReservaWebController(ReservaService service, LaboratorioRepository laboratorioRepo) {      
+    this.service = service;     
+    this.laboratorioRepo = laboratorioRepo;     
+}    
 
 Ambos constructores reciben el mismo tipo ReservaService, y como esta clase está anotada con @Service, Spring inyecta la misma instancia en los dos controladores sin necesidad de configuración adicional.
 
 
 ### Punto de decisión 4 — Manejo de errores consistente entre MVC y REST
 
-Se optó por mantener dos manejadores de excepciones independientes en la capa de presentación —GlobalRestExceptionHandler, restringido a los controladores REST mediante annotations = RestController.class, y ReservaWebExceptionHandler, restringido a ReservaWebController mediante assignableTypes = ReservaWebController.class— en lugar de uno solo. Ambos, sin embargo, consumen exactamente el mismo vocabulario de excepciones de dominio: ReservaConflictException y RecursoNoEncontradoException. Esto es posible porque la arquitectura en capas separa la lógica de negocio (qué error ocurrió) de su representación (cómo se muestra al cliente), y cada superficie de la aplicación necesita una representación distinta ante el mismo error:
+Se optó por mantener dos manejadores de excepciones independientes en la capa de presentación —GlobalRestExceptionHandler, restringido a los controladores REST mediante annotations = RestController.class, y ReservaWebExceptionHandler, restringido a ReservaWebController mediante assignableTypes = ReservaWebController.class— en lugar de uno solo. Ambos, sin embargo, consumen exactamente el mismo vocabulario de excepciones de dominio: ReservaConflictException y RecursoNoEncontradoException. Esto es posible porque la arquitectura en capas separa la lógica de negocio (qué error ocurrió) de su representación (cómo se muestra al cliente), y cada superficie de la aplicación necesita una representación distinta ante el mismo error:     
 
 la API REST debe responder un cuerpo JSON con el código de estado HTTP correspondiente (409 Conflict, 404 Not Found, 400 Bad Request);
 la vista MVC necesita una redirección (302) que conserve el mensaje mediante flash attributes, para mostrarlo como texto legible en una página HTML.
@@ -86,3 +86,33 @@ La alternativa descartada era unificar ambos casos en un único @RestControllerA
 ## Conclusiones
 El aprendizaje más relevante de este post-contenido fue entender que la separación en capas no es una plantilla mecánica que se aplica igual en todos los casos, sino un criterio que depende de qué necesita cada regla para evaluarse: si requiere datos que solo la base de datos conoce (como el solapamiento de horarios) o si le basta con los atributos del propio objeto (como la validación de horario y duración). Precisamente ahí estuvo la parte más difícil de decidir en la Parte 1, porque es tentador resolver todo trayendo datos a memoria y validando con Java puro, cuando en realidad delegar el filtrado de solapamientos al Repository resulta más eficiente y escalable a largo plazo. En la Parte 2, el reto principal fue evitar duplicar la lógica de negocio al agregar la vista MVC: reutilizar la misma instancia de ReservaService en ambos controladores dejó claro por qué la capa Service existe como punto único de verdad, y no como una capa intermedia sin propósito. De igual forma, separar el manejo de errores en dos clases —una para REST y otra para MVC— permitió comprobar que dos superficies de presentación pueden compartir exactamente el mismo vocabulario de excepciones de dominio sin acoplar su forma de responder al cliente. En conjunto, el ejercicio reforzó que justificar por escrito una decisión arquitectónica es tan importante como que el código funcione, porque obliga a pensar explícitamente en las consecuencias de la alternativa que se descartó.
 
+
+
+## Evidencia visual
+
+### Endpoints REST:
+
+**endpoint POST /api/reservas retorna 201 Created con la reserva creada al enviar un horario libre**   
+![Endpoint 1](./images/Endpoint1.jpg)
+
+**endpoint POST /api/reservas retorna 409 Conflict con un mensaje descriptivo al intentar reservar un laboratorio en un horario que se solapa con una reserva activa existente**    
+![Endpoint 2](./images/endpoint2.jpg)
+
+**endpoint POST /api/reservas retorna 400 Bad Request al enviar una reserva fuera del horario de atención o con una duración fuera del rango permitido**    
+![Endpoint 3](./images/endpoint3.jpg)
+
+### consola H2
+![Consola H2](./images/consola-H2.jpg)
+
+
+**Página de lista de reservas:**
+![Lista de reservas](./images/pagina-reserva.jpg)
+
+**Formulario de nueva reserva :**
+![Formulario nueva reserva](./images/pagina-reserva-nueva.jpg)
+
+**Reserva creada exitosamente:**
+![Creación de reserva](./images/creacion-reserva.jpg)
+
+**Error de solapamiento de horario :**
+![Error por solapamiento](./images/error-solapamiento.jpg)
