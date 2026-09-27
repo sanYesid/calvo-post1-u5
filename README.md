@@ -93,7 +93,7 @@ El aprendizaje más relevante de este post-contenido fue entender que la separac
 ### Endpoints REST:
 
 **endpoint POST /api/reservas retorna 201 Created con la reserva creada al enviar un horario libre**   
-![Endpoint 1](./images/Endpoint1.jpg)
+![Endpoint 1](./images/endpoint1.jpg)
 
 **endpoint POST /api/reservas retorna 409 Conflict con un mensaje descriptivo al intentar reservar un laboratorio en un horario que se solapa con una reserva activa existente**    
 ![Endpoint 2](./images/endpoint2.jpg)
