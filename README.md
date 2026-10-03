@@ -7,14 +7,20 @@ la reserva de laboratorios de cómputo, con dos partes: una API REST
 en capas (Entity, Repository, Service, Controller) sobre H2, y una
 vista Thymeleaf (MVC clásico) que reutiliza el mismo Service.
 
+
 ## Parte 1 — Repository, Service y Controller REST
 LaboratorioRepository y ReservaRepository extienden JpaRepository;
 ReservaRepository agrega una consulta JPQL propia para detectar
 solapamientos de horario. ReservaService concentra las reglas de
 negocio (solapamiento, horario de atención, duración, cancelación
-tardía). ReservaController y LaboratorioController exponen
-/api/reservas y /api/laboratorios. Ver paquetes model/, repository/,
-service/, exception/ y controller/.
+tardía). ReservaController expone /api/reservas delegando siempre
+en ReservaService. LaboratorioController expone /api/laboratorios
+inyectando LaboratorioRepository directamente, sin un Service
+propio: el catálogo de laboratorios es un CRUD simple sin ninguna
+regla de negocio que justifique esa capa, y crear un
+LaboratorioService que solo delegara al Repository habría sido el
+mismo antipatrón de Service anémico que se evita en ReservaService.
+Ver paquetes model/, repository/, service/, exception/ y controller/.
 
 ## Parte 2 — Vista MVC con Thymeleaf
 ReservaWebController expone /reservas con Thymeleaf, inyectando la
@@ -78,6 +84,30 @@ la API REST debe responder un cuerpo JSON con el código de estado HTTP correspo
 la vista MVC necesita una redirección (302) que conserve el mensaje mediante flash attributes, para mostrarlo como texto legible en una página HTML.
 
 La alternativa descartada era unificar ambos casos en un único @RestControllerAdvice que inspeccionara la cabecera Accept de la petición para decidir si responder JSON o redirigir. Esto habría introducido una rama condicional por cada tipo de excepción, violando el principio de responsabilidad única y el principio abierto/cerrado: cualquier cambio en cómo se presenta un error en la vista MVC obligaría a tocar la misma clase que atiende a los clientes REST, aumentando el acoplamiento entre dos superficies que deberían poder evolucionar de forma independiente. Mantener dos manejadores explícitamente delimitados conserva la misma separación de responsabilidades que ya existe en el resto del proyecto: una clase por superficie de presentación, ambas alimentadas por el mismo vocabulario de excepciones de dominio.
+
+## Endpoints disponibles
+
+### API REST
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | /api/laboratorios | Lista todos los laboratorios |
+| GET | /api/laboratorios/{id} | Obtiene un laboratorio por id |
+| POST | /api/laboratorios | Crea un laboratorio |
+| GET | /api/reservas | Lista todas las reservas |
+| GET | /api/reservas/{id} | Obtiene una reserva por id |
+| GET | /api/reservas/laboratorio/{laboratorioId} | Lista las reservas de un laboratorio |
+| POST | /api/reservas | Crea una reserva (valida solapamiento y horario) |
+| DELETE | /api/reservas/{id} | Cancela una reserva |
+
+### Vista MVC (Thymeleaf)
+| Ruta | Método | Descripción |
+|---|---|---|
+| /reservas | GET | Lista de reservas |
+| /reservas/nueva | GET | Formulario de nueva reserva |
+| /reservas | POST | Crea una reserva desde el formulario |
+| /reservas/{id}/cancelar | POST | Cancela una reserva |
+
+Consola H2: http://localhost:8080/h2-console (JDBC URL: `jdbc:h2:mem:reservas_labs_db`, usuario `sa`, sin contraseña).
 
 ## Herramientas utilizadas
 - Java 17, Spring Boot 3.2, Spring Data JPA, H2, Thymeleaf

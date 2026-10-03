@@ -46,14 +46,10 @@ public class ReservaService {
                 "Laboratorio no encontrado: " + reserva.getLaboratorio().getId()));
         reserva.setLaboratorio(laboratorio);
 
-        // Regla de negocio 1 — puramente de dominio, no requiere acceso a
-        // datos: horario de atención y duración permitida. Se valida por
-        // completo aquí, sin apoyo del Repository (ver Punto de decisión 2).
+        
         validarHorarioYDuracion(reserva.getInicio(), reserva.getFin());
 
-        // Regla de negocio 2 — la que sí requiere datos: no permitir un
-        // horario solapado con otra reserva activa del mismo laboratorio
-        // (ver Punto de decisión 1).
+        
         List<Reserva> solapamientos = reservaRepo.buscarSolapamientos(
             laboratorio.getId(), reserva.getInicio(), reserva.getFin());
         if (!solapamientos.isEmpty()) {
@@ -69,8 +65,7 @@ public class ReservaService {
         Reserva reserva = reservaRepo.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Reserva no encontrada: " + id));
 
-        // Regla de negocio 3 — no se cancela una reserva cuyo horario de
-        // inicio ya pasó; refuerza que ReservaService no es un passthrough.
+        
         if (reserva.getInicio().isBefore(LocalDateTime.now())) {
             throw new ReservaConflictException(
                 "No se puede cancelar una reserva cuyo horario de inicio ya pasó");

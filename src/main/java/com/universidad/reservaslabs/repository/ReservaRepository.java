@@ -14,11 +14,7 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
     List<Reserva> findByLaboratorioId(Long laboratorioId);
 
-    // Consulta JPQL: reservas activas (no canceladas) del mismo laboratorio
-    // cuyo rango [inicio, fin) se solapa con el rango dado. Se filtra en el
-    // motor de base de datos, no en memoria, para que la consulta escale con
-    // el volumen de reservas — ver Punto de decisión 1 sobre por qué el
-    // filtrado vive aquí y no en el Service.
+    
     @Query("""
         SELECT r FROM Reserva r
         WHERE r.laboratorio.id = :laboratorioId
