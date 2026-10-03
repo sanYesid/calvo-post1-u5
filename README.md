@@ -99,13 +99,6 @@ La alternativa descartada era unificar ambos casos en un único @RestControllerA
 | POST | /api/reservas | Crea una reserva (valida solapamiento y horario) |
 | DELETE | /api/reservas/{id} | Cancela una reserva |
 
-### Vista MVC (Thymeleaf)
-| Ruta | Método | Descripción |
-|---|---|---|
-| /reservas | GET | Lista de reservas |
-| /reservas/nueva | GET | Formulario de nueva reserva |
-| /reservas | POST | Crea una reserva desde el formulario |
-| /reservas/{id}/cancelar | POST | Cancela una reserva |
 
 Consola H2: http://localhost:8080/h2-console (JDBC URL: `jdbc:h2:mem:reservas_labs_db`, usuario `sa`, sin contraseña).
 
